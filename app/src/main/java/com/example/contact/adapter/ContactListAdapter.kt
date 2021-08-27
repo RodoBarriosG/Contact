@@ -5,12 +5,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.contact.database.Contact
+import com.example.contact.database.entity.Contact
 import com.example.contact.databinding.ContactsListItemBinding
 
-class ContactListAdapter(
-    private val onItemClick: (Contact) -> Unit
-) : ListAdapter<Contact, ContactListAdapter.ContactListViewHolder>(DiffCallback) {
+class ContactListAdapter: ListAdapter<Contact, ContactListAdapter.ContactListViewHolder>(DiffCallback) {
 
     class ContactListViewHolder(private var binding: ContactsListItemBinding): RecyclerView.ViewHolder(binding.root) {
         fun bind(contact: Contact) {
@@ -20,18 +18,13 @@ class ContactListAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactListViewHolder {
-        val viewHolder = ContactListViewHolder(
+        return ContactListViewHolder(
             ContactsListItemBinding.inflate(
                 LayoutInflater.from(parent.context),
                 parent,
                 false
             )
         )
-        viewHolder.itemView.setOnClickListener {
-            val position = viewHolder.adapterPosition
-            onItemClick(getItem(position))
-        }
-        return viewHolder
     }
 
     override fun onBindViewHolder(holder: ContactListViewHolder, position: Int) {
