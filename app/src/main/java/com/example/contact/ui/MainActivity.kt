@@ -1,78 +1,75 @@
 package com.example.contact.ui
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.database.Cursor
-import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.ContactsContract
-import android.widget.ListView
-import android.widget.SimpleCursorAdapter
 import androidx.annotation.RequiresApi
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
-import androidx.loader.app.LoaderManager
-import androidx.loader.content.CursorLoader
-import androidx.loader.content.Loader
+import androidx.recyclerview.widget.RecyclerView
 import com.example.contact.MainApplication
-import com.example.contact.R
+import com.example.contact.adapter.ContactListAdapter
+import com.example.contact.database.entity.Contact
+import com.example.contact.databinding.ActivityMainBinding
+import com.example.contact.viewmodels.ContactEvent
 import com.example.contact.viewmodels.ContactViewModel
 import com.example.contact.viewmodels.ContactViewModelFactory
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> {
+class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CONTACT_CODE = 100
         private const val REQUEST_MESSAGE = "Para continuar debe aceptar el permiso"
+        private const val ACCEPT = "Aceptar"
     }
 
     private lateinit var viewModel: ContactViewModel
-
-    @SuppressLint("InlinedApi")
-    private val FROM_COLUMNS: Array<String> = arrayOf(
-        ContactsContract.Contacts.DISPLAY_NAME,
-        ContactsContract.CommonDataKinds.Email.DATA
-    )
-
-    private val PROJECTION: Array<out String> = arrayOf(
-        ContactsContract.Contacts._ID,
-        ContactsContract.Contacts.DISPLAY_NAME,
-        ContactsContract.CommonDataKinds.Email.DATA,
-        ContactsContract.CommonDataKinds.Phone.PHOTO_URI,
-        ContactsContract.RawContacts.CONTACT_ID
-    )
-
-    private val TO_IDS: IntArray = intArrayOf(
-        R.id.text_name,
-        R.id.text_phone_or_email
-    )
-
-    lateinit var contactsList: ListView
-    var contactId: Long = 0
-    var contactKey: String? = null
-    var contactUri: Uri? = null
-    private var cursorAdapter: SimpleCursorAdapter? = null
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var recycler: RecyclerView
+    private lateinit var adapter: ContactListAdapter
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
         requestContactPermission()
+        configRecycler()
 
+        binding.progress.isVisible = true
         viewModel = createViewModel()
+        viewModel.contactEventLiveData.observe(this, { contactEvent ->
+            when (contactEvent) {
+                is ContactEvent.SetContactList -> {
+                    setContactList(contactEvent.contactList)
+                    binding.progress.isGone = true
+                }
+            }
+        })
 
-        contactsList = findViewById(R.id.list)
-        cursorAdapter = SimpleCursorAdapter(
-            this,
-            R.layout.contacts_list_item,
-            null,
-            FROM_COLUMNS, TO_IDS,
-            0
-        )
-        contactsList.adapter = cursorAdapter
+    }
+
+    private fun setContactList(contacts: Flow<List<Contact>>) {
+        GlobalScope.launch {
+            contacts.collect {
+                adapter.submitList(it)
+            }
+        }
+    }
+
+    private fun configRecycler() {
+        recycler = binding.recycler
+        adapter = ContactListAdapter()
+        recycler.adapter = adapter
     }
 
     private fun createViewModel(): ContactViewModel = ViewModelProvider(
@@ -84,7 +81,7 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
     fun requestContactPermission() {
         when (PackageManager.PERMISSION_GRANTED) {
             checkSelfPermission(Manifest.permission.READ_CONTACTS) -> {
-                supportLoaderManager.initLoader(0, null, this)
+                viewModel.getAll()
             }
             else -> { requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), REQUEST_CONTACT_CODE) }
         }
@@ -96,35 +93,16 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         if (requestCode == REQUEST_CONTACT_CODE &&
             grantResults.isNotEmpty() &&
             grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            supportLoaderManager.initLoader(0, null, this)
+            viewModel.getAll()
         } else {
             Snackbar.make(
                 findViewById(android.R.id.content),
                 REQUEST_MESSAGE,
                 Snackbar.LENGTH_INDEFINITE
             )
-                .setAction("ACEPTAR") { requestContactPermission() }
+                .setAction(ACCEPT) { requestContactPermission() }
                 .show()
         }
         return
-    }
-
-    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
-        return CursorLoader(
-            this,
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            PROJECTION,
-            null,
-            null,
-            null
-        )
-    }
-
-    override fun onLoadFinished(loader: Loader<Cursor>, data: Cursor?) {
-        cursorAdapter?.swapCursor(data)
-    }
-
-    override fun onLoaderReset(loader: Loader<Cursor>) {
-        cursorAdapter?.swapCursor(null)
     }
 }
