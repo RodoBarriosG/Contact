@@ -9,12 +9,14 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.view.View
 import android.widget.ListView
 import android.widget.SimpleCursorAdapter
 import androidx.annotation.RequiresApi
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.CursorLoader
 import androidx.loader.content.Loader
+import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -75,6 +77,7 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CONTACT_CODE &&
@@ -82,7 +85,13 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
             grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             supportLoaderManager.initLoader(0, null, this)
         } else {
-
+            Snackbar.make(
+                findViewById(android.R.id.content),
+                REQUEST_MESSAGE,
+                Snackbar.LENGTH_INDEFINITE
+            )
+                .setAction("ACEPTAR") { requestContactPermission() }
+                .show()
         }
         return
     }
