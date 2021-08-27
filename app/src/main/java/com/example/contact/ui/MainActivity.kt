@@ -1,4 +1,4 @@
-package com.example.contact
+package com.example.contact.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -9,13 +9,17 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.ContactsContract
-import android.view.View
 import android.widget.ListView
 import android.widget.SimpleCursorAdapter
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.ViewModelProvider
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.CursorLoader
 import androidx.loader.content.Loader
+import com.example.contact.MainApplication
+import com.example.contact.R
+import com.example.contact.viewmodels.ContactViewModel
+import com.example.contact.viewmodels.ContactViewModelFactory
 import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> {
@@ -24,6 +28,8 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         private const val REQUEST_CONTACT_CODE = 100
         private const val REQUEST_MESSAGE = "Para continuar debe aceptar el permiso"
     }
+
+    private lateinit var viewModel: ContactViewModel
 
     @SuppressLint("InlinedApi")
     private val FROM_COLUMNS: Array<String> = arrayOf(
@@ -56,6 +62,8 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         setContentView(R.layout.activity_main)
         requestContactPermission()
 
+        viewModel = createViewModel()
+
         contactsList = findViewById(R.id.list)
         cursorAdapter = SimpleCursorAdapter(
             this,
@@ -66,6 +74,11 @@ class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor> 
         )
         contactsList.adapter = cursorAdapter
     }
+
+    private fun createViewModel(): ContactViewModel = ViewModelProvider(
+        this,
+        ContactViewModelFactory((application as MainApplication).database.contactDao()),
+    ).get(ContactViewModel::class.java)
 
     @RequiresApi(Build.VERSION_CODES.M)
     fun requestContactPermission() {
