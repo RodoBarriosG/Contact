@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    id 'kotlin-kapt'
 }
 
 android {
@@ -47,14 +48,8 @@ dependencies {
 
     // Room
     implementation "androidx.room:room-runtime:$roomVersion"
-    implementation "androidx.room:room-compiler:$roomVersion"
-
-    // lifecycle
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
-
-    // coroutines
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutineVersion"
+    kapt "androidx.room:room-compiler:$roomVersion"
+    implementation "androidx.room:room-ktx:$roomVersion"
 
     // workManager
     implementation "androidx.work:work-runtime-ktx:$workManagerVersion"
