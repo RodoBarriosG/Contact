@@ -8,4 +8,6 @@ interface ContactRepository {
     fun getAll() : Flow<List<Contact>>
 
     suspend fun insert(contact: Contact)
+
+    suspend fun delete()
 }

@@ -17,4 +17,10 @@ class ContactRepositoryImpl(private val contactDao: ContactDao) : ContactReposit
             contactDao.insert(contact)
         }
     }
+
+    override suspend fun delete() {
+        withContext(Dispatchers.IO) {
+            contactDao.deleteALl()
+        }
+    }
 }

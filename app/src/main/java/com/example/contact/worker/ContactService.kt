@@ -20,6 +20,7 @@ class ContactService(private val context: Context) {
 
         private val URI_EMAIL = ContactsContract.CommonDataKinds.Email.CONTENT_URI
         private val URI_PHONE = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+        private const val IN_VISIBLE_GROUP = ContactsContract.Contacts.IN_VISIBLE_GROUP + " = 1"
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -28,16 +29,16 @@ class ContactService(private val context: Context) {
             context.contentResolver.query(
                 URI_EMAIL,
                 PROJECTION,
+                IN_VISIBLE_GROUP,
                 null,
-                null,
-                null
+                ContactsContract.Contacts._ID
             ),
             context.contentResolver.query(
                 URI_PHONE,
                 PROJECTION,
+                IN_VISIBLE_GROUP,
                 null,
-                null,
-                null
+                ContactsContract.Contacts._ID
             )
         )
     }

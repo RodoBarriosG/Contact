@@ -7,6 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.example.contact.MainApplication
 import com.example.contact.repository.ContactRepositoryImpl
+import com.example.contact.usecases.DeleteContactsUseCase
 import com.example.contact.usecases.SetContactUseCase
 
 class ContactWorker(
@@ -20,8 +21,10 @@ class ContactWorker(
 
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun doWork(): Result {
+        val contactRepository = ContactRepositoryImpl((context as MainApplication).database.contactDao())
+        DeleteContactsUseCase(contactRepository).invoke()
         val contacts = ContactService(context).insert()
-        val useCase = SetContactUseCase(ContactRepositoryImpl((context as MainApplication).database.contactDao()))
+        val useCase = SetContactUseCase(contactRepository)
         for (contact in contacts) {
             useCase.invoke(contact)
         }
