@@ -9,6 +9,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.contact.MainApplication
 import com.example.contact.adapter.ContactListAdapter
@@ -17,6 +18,7 @@ import com.example.contact.databinding.ActivityMainBinding
 import com.example.contact.viewmodels.ContactEvent
 import com.example.contact.viewmodels.ContactViewModel
 import com.example.contact.viewmodels.ContactViewModelFactory
+import com.example.contact.worker.ContactSync
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
@@ -42,11 +44,11 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        requestContactPermission()
+        viewModel = createViewModel()
         configRecycler()
+        requestContactPermission()
 
         binding.progress.isVisible = true
-        viewModel = createViewModel()
         viewModel.contactEventLiveData.observe(this, { contactEvent ->
             when (contactEvent) {
                 is ContactEvent.SetContactList -> {
@@ -68,6 +70,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun configRecycler() {
         recycler = binding.recycler
+        recycler.layoutManager = LinearLayoutManager(this)
         adapter = ContactListAdapter()
         recycler.adapter = adapter
     }
@@ -81,6 +84,7 @@ class MainActivity : AppCompatActivity() {
     fun requestContactPermission() {
         when (PackageManager.PERMISSION_GRANTED) {
             checkSelfPermission(Manifest.permission.READ_CONTACTS) -> {
+                startContactSync()
                 viewModel.getAll()
             }
             else -> { requestPermissions(arrayOf(Manifest.permission.READ_CONTACTS), REQUEST_CONTACT_CODE) }
@@ -93,6 +97,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_CONTACT_CODE &&
             grantResults.isNotEmpty() &&
             grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startContactSync()
             viewModel.getAll()
         } else {
             Snackbar.make(
@@ -104,5 +109,10 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
         return
+    }
+
+    private fun startContactSync() {
+        ContactSync(application).stopSyncContacts()
+        ContactSync(application).startSyncContacts()
     }
 }
