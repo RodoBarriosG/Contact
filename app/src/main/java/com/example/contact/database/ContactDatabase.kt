@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.contact.database.dao.ContactDao
 import com.example.contact.database.entity.Contact
 
-@Database(entities = [Contact::class], version = 1)
+@Database(entities = [Contact::class], version = 1, exportSchema = false)
 abstract class ContactDatabase: RoomDatabase() {
 
     abstract fun contactDao(): ContactDao
@@ -18,14 +18,14 @@ abstract class ContactDatabase: RoomDatabase() {
         fun getDatabase(context: Context): ContactDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                    context,
+                    context.applicationContext,
                     ContactDatabase::class.java,
                     "contact_database")
+                    .fallbackToDestructiveMigration()
                     .build()
 
                 INSTANCE = instance
-
-                instance
+                return instance
             }
         }
     }
